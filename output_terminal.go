@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"sort"
@@ -110,8 +111,20 @@ func (o *TermOutput) Finish(m *module.Module, l *license.License, err error) {
 	o.once.Do(o.init)
 
 	if o.Plain {
-		fmt.Fprintf(o.Out, fmt.Sprintf(
-			"%s %s\n", o.paddedModule(m), l.String()))
+		if o.Config != nil {
+			state := o.Config.Allowed(l)
+			switch state {
+			case config.StateAllowed:
+			case config.StateDenied, config.StateUnknown:
+				o.exitCode = 1
+			}
+		}
+
+		fmt.Fprintf(o.Out,
+			fmt.Sprintf("%s\t%s\t%s\n",
+				o.paddedModule(m),
+				l.String(),
+				base64.StdEncoding.EncodeToString([]byte(l.Text))))
 		return
 	}
 

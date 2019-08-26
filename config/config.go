@@ -28,6 +28,10 @@ type Config struct {
 	// For example, "gopkg.in/(.*)" => "github.com/\1" would translate
 	// gopkg into github (incorrectly, but the example would work).
 	Translate map[string]string `hcl:"translate,optional"`
+	// ExecPath is the binary we are parsing
+	ExecPath string
+	// where wel be storing a copy of overridden detections
+	OverridePath string
 }
 
 // Allowed returns the allowed state of a license given the configuration.

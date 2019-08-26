@@ -37,10 +37,11 @@ func detect(rl *github.RepositoryLicense) (*license.License, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error looking up license %q: %s", current, err)
 	}
-
+	b, _ := base64.StdEncoding.DecodeString(rl.GetContent())
 	return &license.License{
 		Name: lic.Name,
 		SPDX: lic.ID,
+		Text: string(b),
 	}, nil
 }
 

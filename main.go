@@ -33,18 +33,18 @@ func main() {
 }
 
 func realMain() int {
-	termOut := &TermOutput{Out: os.Stdout}
+	termOut := &FileOutput{}
 
 	var flagLicense bool
-	var flagOutXLSX string
+	var overridePath string
 	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	flags.BoolVar(&flagLicense, "license", true,
 		"look up and verify license. If false, dependencies are\n"+
 			"printed without licenses.")
-	flags.BoolVar(&termOut.Plain, "plain", false, "plain terminal output, no colors or live updates")
-	flags.BoolVar(&termOut.Verbose, "verbose", false, "additional logging to terminal, requires -plain")
-	flags.StringVar(&flagOutXLSX, "out-xlsx", "",
-		"save report in Excel XLSX format to the given path")
+	//flags.BoolVar(&termOut.Plain, "plain", false, "plain terminal output, no colors or live updates")
+	//flags.BoolVar(&termOut.Verbose, "verbose", false, "additional logging to terminal, requires -plain")
+	flags.StringVar(&overridePath, "override-path", "./golicense-override", "What path should we look in to find overrides")
+
 	flags.Parse(os.Args[1:])
 	args := flags.Args()
 	if len(args) == 0 {
@@ -76,6 +76,8 @@ func realMain() int {
 		cfg = *c
 	}
 
+	cfg.ExecPath = exePath
+	cfg.OverridePath = overridePath
 	// Read the dependencies from the binary itself
 	vsn, err := version.ReadExe(exePath)
 	if err != nil {
@@ -110,12 +112,6 @@ func realMain() int {
 
 	// Setup the outputs
 	out := &MultiOutput{Outputs: []Output{termOut}}
-	if flagOutXLSX != "" {
-		out.Outputs = append(out.Outputs, &XLSXOutput{
-			Path:   flagOutXLSX,
-			Config: &cfg,
-		})
-	}
 
 	// Setup a context. We don't connect this to an interrupt signal or
 	// anything since we just exit immediately on interrupt. No cleanup
@@ -127,6 +123,8 @@ func realMain() int {
 	if v := os.Getenv(EnvGitHubToken); v != "" {
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: v})
 		githubClient = oauth2.NewClient(ctx, ts)
+	} else {
+		panic("Please export GITHUB_TOKEN")
 	}
 
 	// Build our translators and license finders
